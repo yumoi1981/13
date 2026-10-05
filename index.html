@@ -1,0 +1,626 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>イオンラボ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-column lab notebook on graph paper; atom diagrams are the hero, proton red / electron blue carry meaning everywhere */
+:root{
+  --paper:#EAEFF2; --grid:#D8E0E6; --card:#FBFCFD; --ink:#17232D; --muted:#5A6A76; --line:#C7D2DA;
+  --proton:#D0503B; --electron:#2356A8; --neutron:#8C98A2; --ok:#24804F; --ng:#C23636;
+  --hl-bg:#FCE6A2; --hl-fg:#17232D; --tint:#E1E9EF; --noble:#EAF1E6;
+  --f-disp:'Dela Gothic One','Hiragino Kaku Gothic StdN','Hiragino Sans',sans-serif;
+  --f-body:'Zen Kaku Gothic New','Hiragino Sans','Hiragino Kaku Gothic ProN',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0F161C; --grid:#18232B; --card:#16212A; --ink:#E3EAEE; --muted:#93A3AE; --line:#2B3944;
+  --proton:#F2785F; --electron:#80A9F2; --neutron:#7D8B96; --ok:#5CC48A; --ng:#F07272;
+  --hl-bg:#4A3C12; --hl-fg:#FCE6A2; --tint:#1D2B36; --noble:#1C2A20; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0F161C; --grid:#18232B; --card:#16212A; --ink:#E3EAEE; --muted:#93A3AE; --line:#2B3944;
+  --proton:#F2785F; --electron:#80A9F2; --neutron:#7D8B96; --ok:#5CC48A; --ng:#F07272;
+  --hl-bg:#4A3C12; --hl-fg:#FCE6A2; --tint:#1D2B36; --noble:#1C2A20; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background-color:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.7;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;-webkit-tap-highlight-color:transparent}
+#app{max-width:540px;margin:0 auto;padding-inline:16px;padding-block:12px 40px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--electron);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* home */
+.hero{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding-block:8px 4px}
+.hero h1{font-family:var(--f-disp);font-weight:400;font-size:2.4rem;line-height:1.1;letter-spacing:.02em}
+.hero p{margin:6px 0 0;color:var(--muted);font-size:.86rem;line-height:1.5}
+.hero svg{width:112px;height:112px}
+.sec-label{font-size:.74rem;letter-spacing:.14em;color:var(--muted);margin:22px 0 8px;font-weight:700}
+.modes{display:grid;gap:10px}
+.mode{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;text-align:left;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;width:100%}
+.mode:active{transform:translateY(1px)}
+.mode .ic{width:44px;height:44px}
+.mode b{display:block;font-size:1.02rem}
+.mode small{display:block;color:var(--muted);font-size:.78rem;line-height:1.45}
+.mode .pc{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);text-align:right;min-width:52px}
+.bar{height:5px;background:var(--tint);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--electron);border-radius:3px}
+.mode.read{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.mode.read small{color:var(--paper);opacity:.75}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:26px;color:var(--muted);font-size:.78rem;gap:8px;flex-wrap:wrap}
+.linkbtn{background:none;border:none;color:var(--muted);text-decoration:underline;padding:4px}
+
+/* sub-menu */
+.top{display:flex;align-items:center;gap:10px;padding-block:6px 10px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--paper);z-index:5}
+.back{border:1px solid var(--line);background:var(--card);border-radius:8px;width:38px;height:38px;font-size:1.1rem;flex:none}
+.top h2{font-size:1.05rem;flex:1;min-width:0}
+.chip{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);border-radius:20px;padding:2px 10px;background:var(--card);white-space:nowrap}
+.chip.hot{border-color:var(--proton);color:var(--proton)}
+.pick{display:grid;gap:10px}
+.pick button{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:left}
+.pick b{display:block}
+.pick small{color:var(--muted);font-size:.8rem}
+
+/* question */
+.qcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.qtag{font-size:.72rem;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.prompt{margin:4px 0 12px;font-weight:700}
+.passage{line-height:2.2;font-size:1rem}
+.blank{display:inline-block;padding:0 6px;border-bottom:2px solid var(--line);color:var(--muted);font-family:var(--f-mono);font-size:.9em;line-height:1.5}
+.blank.cur{background:var(--hl-bg);color:var(--hl-fg);border-color:var(--proton);font-weight:700;border-radius:4px 4px 0 0}
+.filled{display:inline-block;padding:0 4px;border-bottom:2px solid var(--ok);color:var(--ok);font-weight:700;line-height:1.5}
+.filled.miss{border-color:var(--ng);color:var(--ng)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.choice{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:12px 8px;font-weight:700;font-size:1.02rem;min-height:52px}
+.choice.ok{border-color:var(--ok);color:var(--ok);background:var(--noble)}
+.choice.ng{border-color:var(--ng);color:var(--ng)}
+.choice[disabled]{cursor:default}
+.nums{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;margin-top:10px}
+.nums .choice{padding:10px 0;font-family:var(--f-mono);min-height:46px}
+
+/* element notation */
+.nota{display:inline-grid;grid-template-columns:auto auto;grid-template-rows:auto auto;align-items:center;font-family:var(--f-mono);line-height:1}
+.nota .ma{grid-column:1;grid-row:1;font-size:.42em;text-align:right;align-self:end;padding-right:.08em}
+.nota .zn{grid-column:1;grid-row:2;font-size:.42em;text-align:right;align-self:start;padding-right:.08em}
+.nota .sy{grid-column:2;grid-row:1/3;font-family:'Times New Roman',Georgia,serif;font-size:1em}
+.nota-wrap{display:flex;flex-direction:column;align-items:center;padding-block:6px 10px}
+.nota-wrap .nota{font-size:4.2rem}
+.ename{color:var(--muted);font-size:.9rem}
+.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.field{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:6px 4px 8px;display:flex;flex-direction:column;align-items:center}
+.field .fl{font-size:.76rem;color:var(--muted)}
+.field .fv{font-family:var(--f-mono);font-size:1.7rem;line-height:1.2;min-height:1.2em}
+.field.act{border-color:var(--electron);box-shadow:0 0 0 3px color-mix(in srgb,var(--electron) 22%,transparent)}
+.field.ok{border-color:var(--ok)} .field.ok .fv{color:var(--ok)}
+.field.ng{border-color:var(--ng)} .field.ng .fv{color:var(--ng);text-decoration:line-through}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}
+.key{background:var(--tint);border:none;border-radius:9px;padding:12px 0;font-family:var(--f-mono);font-size:1.3rem}
+.key.go{background:var(--ink);color:var(--paper);font-family:var(--f-body);font-size:.95rem;font-weight:700}
+
+/* atom drawing */
+.atom{display:block;margin:0 auto;width:min(100%,300px);height:auto;touch-action:manipulation}
+.ring{fill:none;stroke:var(--ink);stroke-width:1.6}
+.hit{fill:none;stroke:transparent;stroke-width:24;cursor:pointer}
+.nuc{fill:var(--tint);stroke:var(--ink);stroke-width:1.6}
+.nuct{fill:var(--ink);font-family:var(--f-mono);font-size:17px;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.el{fill:var(--ink)}
+.el.blue{fill:var(--electron)}
+.shlab{fill:var(--muted);font-family:var(--f-mono);font-size:11px;text-anchor:middle}
+.shells{display:grid;gap:6px;margin-top:8px}
+.srow{display:grid;grid-template-columns:3.2em 44px 1fr 44px;align-items:center;gap:8px}
+.srow .sn{font-family:var(--f-mono);font-weight:600}
+.srow .sc{text-align:center;font-family:var(--f-mono);font-size:1.15rem}
+.pm{background:var(--tint);border:none;border-radius:9px;height:40px;font-size:1.2rem}
+.vlab{margin-top:14px;font-weight:700;font-size:.92rem}
+.check{width:100%;margin-top:14px;background:var(--ink);color:var(--paper);border:none;border-radius:10px;padding:14px;font-weight:700;font-size:1rem}
+.check[disabled]{opacity:.35;cursor:default}
+.hint{color:var(--muted);font-size:.8rem;text-align:center;margin:4px 0 0}
+
+/* feedback */
+.fb{margin-top:12px;border-radius:12px;padding:14px 16px;border:1.5px solid var(--ok);background:var(--card)}
+.fb.ng{border-color:var(--ng)}
+.fb .v{font-family:var(--f-disp);font-size:1.3rem;color:var(--ok)}
+.fb.ng .v{color:var(--ng)}
+.fb p{margin:4px 0 0;font-size:.92rem;line-height:1.65}
+.fb .next{margin-top:12px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;text-align:center;font-size:.78rem;color:var(--muted)}
+.cmp svg{width:100%}
+
+/* result */
+.result{text-align:center;padding-block:26px}
+.stamp{display:inline-block;font-family:var(--f-disp);font-size:1.5rem;color:var(--proton);border:3px solid var(--proton);border-radius:50%;width:132px;height:132px;line-height:1.15;padding-top:36px;transform:rotate(-10deg);margin-bottom:12px}
+.big{font-family:var(--f-mono);font-size:3rem;font-weight:600}
+.result .row{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 20px;font-weight:700}
+.btn.pri{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.missed{text-align:left;margin-top:18px}
+.missed li{margin-bottom:6px;font-size:.9rem}
+
+/* summary */
+.sum h3{font-size:1.05rem;margin:22px 0 8px;display:flex;gap:8px;align-items:baseline}
+.sum h3 span{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.sum p{margin:6px 0;max-width:65ch}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.fx{display:grid;gap:6px;margin-top:8px}
+.fx div{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;font-weight:700}
+.fx em{font-style:normal;font-family:var(--f-mono);color:var(--muted);font-weight:500;font-size:.85rem}
+.p{color:var(--proton)} .e{color:var(--electron)} .n{color:var(--neutron)}
+.notafig{display:grid;grid-template-columns:auto auto;gap:4px 14px;align-items:center;justify-content:center;margin-top:6px}
+.notafig .nota{font-size:3.4rem;grid-row:1/3;grid-column:2}
+.notafig .lt{font-size:.8rem;text-align:right;line-height:1.35}
+.cap{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;margin-top:8px}
+.cap div{background:var(--tint);border-radius:8px;padding:6px 0}
+.cap b{display:block;font-family:var(--f-mono);font-size:1.3rem}
+.cap small{color:var(--muted);font-size:.72rem}
+.tblwrap{overflow-x:auto;margin-top:8px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+th,td{padding:6px 6px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.72rem;color:var(--muted);font-weight:700;position:sticky;top:0;background:var(--card)}
+td.sym{font-family:'Times New Roman',Georgia,serif;font-size:1rem;font-weight:700}
+td.nm{text-align:left}
+td.vv{font-family:var(--f-mono);font-weight:600;color:var(--electron)}
+tr.noble td{background:var(--noble)}
+tr.sel td{outline:2px solid var(--electron);outline-offset:-2px}
+tbody tr{cursor:pointer}
+.star{color:var(--proton);font-size:.7rem}
+.mnemo{font-size:.9rem;margin-top:8px;line-height:1.8}
+.mnemo b{color:var(--electron)}
+.viewer{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center}
+.viewer svg{width:150px}
+.viewer .vinfo{min-width:0}
+.viewer .vinfo b{font-size:1.15rem}
+.viewer .vinfo div{font-size:.88rem;color:var(--muted);line-height:1.6}
+.confirm{margin-top:10px;background:var(--card);border:1px solid var(--ng);border-radius:10px;padding:12px;font-size:.88rem}
+.confirm .row{display:flex;gap:8px;margin-top:8px}
+
+@keyframes orbit{to{transform:rotate(360deg)}}
+.spin{transform-origin:60px 60px;animation:orbit 9s linear infinite}
+.spin2{transform-origin:60px 60px;animation:orbit 14s linear infinite reverse}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+.pop{animation:pop .35s ease}
+@media (prefers-reduced-motion: reduce){.spin,.spin2,.pop{animation:none}}
+@media (max-width:380px){.hero h1{font-size:2rem}.hero svg{width:92px;height:92px}.nums{grid-template-columns:repeat(5,1fr)}}
+</style>
+</head><body>
+<style>
+.f sub{font-size:.68em;vertical-align:-.25em;line-height:0}
+.f sup{font-size:.68em;vertical-align:.6em;line-height:0}
+.f{font-family:'Times New Roman',Georgia,serif;font-weight:700;white-space:nowrap}
+.choice .f{font-size:1.15em}
+.bigf{font-size:2.6rem;text-align:center;padding-block:6px 4px}
+.pair{display:flex;justify-content:center;align-items:center;gap:14px;font-size:2rem;padding-block:6px}
+.pair .and{font-size:1rem;color:var(--muted);font-family:var(--f-body)}
+.step{margin-top:14px}
+.step + .step{border-top:1px dashed var(--line);padding-top:12px}
+.choices.c3{grid-template-columns:repeat(3,1fr)}
+.choices.c1{grid-template-columns:1fr}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chipb{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);font-family:'Times New Roman',Georgia,serif;font-weight:700;font-size:1.05rem}
+.chipb.bad{border-color:var(--ng);color:var(--ng);animation:pop .3s}
+.lane{display:flex;flex-wrap:wrap;gap:5px;min-height:52px;padding:8px;background:var(--tint);border-radius:10px;align-items:center}
+.lane .chipb{width:38px;height:38px;font-size:.9rem;border-color:var(--electron);color:var(--electron);cursor:default}
+.lane .gt{color:var(--muted);font-size:.8rem}
+.series{display:grid;grid-template-columns:repeat(17,1fr);gap:2px;text-align:center;margin-top:6px}
+.series div{font-family:'Times New Roman',Georgia,serif;font-weight:700;font-size:.82rem;padding:4px 0;border-radius:4px;background:var(--tint)}
+.series small{display:block;font-family:var(--f-body);font-weight:500;font-size:.6rem;color:var(--proton)}
+.rx{display:grid;grid-template-columns:repeat(17,1fr);gap:2px;margin-top:3px;align-items:center}
+.rx span{height:16px;background:var(--electron);opacity:.75;border-radius:3px;font-size:.62rem;color:var(--paper);white-space:nowrap;overflow:visible;padding-left:3px;line-height:16px}
+.rxl{font-size:.74rem;color:var(--muted);margin-top:6px}
+.wide{overflow-x:auto}
+.wide .inner{min-width:520px}
+.ptab{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-top:8px;text-align:center}
+.ptab div{border-radius:6px;padding:4px 0;font-size:.82rem;font-family:'Times New Roman',Georgia,serif;font-weight:700;background:var(--tint)}
+.ptab .h{background:none;font-family:var(--f-mono);font-size:.68rem;color:var(--muted);font-weight:500}
+.ptab .alk{background:color-mix(in srgb,var(--proton) 28%,var(--card))}
+.ptab .ear{background:color-mix(in srgb,var(--proton) 13%,var(--card))}
+.ptab .hal{background:color-mix(in srgb,var(--electron) 25%,var(--card))}
+.ptab .nob{background:var(--noble)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.74rem;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+</style>
+
+<div id="app"></div>
+
+<script>
+/* ---------- data ---------- */
+const EL=[[1,'H','水素'],[2,'He','ヘリウム'],[3,'Li','リチウム'],[4,'Be','ベリリウム'],[5,'B','ホウ素'],[6,'C','炭素'],[7,'N','窒素'],[8,'O','酸素'],[9,'F','フッ素'],[10,'Ne','ネオン'],[11,'Na','ナトリウム'],[12,'Mg','マグネシウム'],[13,'Al','アルミニウム'],[14,'Si','ケイ素'],[15,'P','リン'],[16,'S','硫黄'],[17,'Cl','塩素'],[18,'Ar','アルゴン'],[19,'K','カリウム'],[20,'Ca','カルシウム']].map(([z,s,n])=>({z,s,n}));
+const SH=['K','L','M','N'],CIRC='①②③④⑤⑥⑦⑧⑨⑩',NOBLE=[2,10,18];
+function shells(z){const k=Math.min(z,2);let r=z-k;const l=Math.min(r,8);r-=l;let m,n;if(z<=18){m=r;n=0}else{m=8;n=z-18}const a=[k,l,m,n];while(a.length>1&&a[a.length-1]===0)a.pop();return a}
+const valence=z=>NOBLE.includes(z)?0:shells(z).at(-1);
+const cfgText=z=>shells(z).map((c,i)=>`${SH[i]}殻${c}`).join('・');
+const group=z=>({1:1,2:18,3:1,4:2,11:1,12:2,19:1,20:2})[z]||(z<=10?z+8:z);
+const period=z=>z<=2?1:z<=10?2:z<=18?3:4;
+const family=z=>[3,11,19].includes(z)?'アルカリ金属':[4,12,20].includes(z)?'アルカリ土類金属':[9,17].includes(z)?'ハロゲン':NOBLE.includes(z)?'貴ガス':'どれでもない';
+
+/* formulas */
+const fmt=f=>f.replace(/(\d+)/g,'<sub>$1</sub>');
+const chg=c=>`<sup>${Math.abs(c)>1?Math.abs(c):''}${c>0?'+':'−'}</sup>`;
+const ionF=(f,c)=>`<span class="f">${fmt(f)}${chg(c)}</span>`;
+const IONS=[
+ {n:'水素イオン',f:'H',c:1,trap:'水素化物イオン'},{n:'ナトリウムイオン',f:'Na',c:1},{n:'アンモニウムイオン',f:'NH4',c:1,p:1,trap:'アンモニアイオン',alt:'NH3'},
+ {n:'カルシウムイオン',f:'Ca',c:2},{n:'銅(Ⅱ)イオン',f:'Cu',c:2,trap:'銅(Ⅰ)イオン'},{n:'アルミニウムイオン',f:'Al',c:3},
+ {n:'塩化物イオン',f:'Cl',c:-1,trap:'塩素イオン'},{n:'水酸化物イオン',f:'OH',c:-1,p:1,trap:'水酸イオン'},{n:'硝酸イオン',f:'NO3',c:-1,p:1,trap:'窒素イオン',alt:'NO2'},
+ {n:'炭酸イオン',f:'CO3',c:-2,p:1,trap:'炭素イオン',alt:'CO2'},{n:'硫酸イオン',f:'SO4',c:-2,p:1,trap:'硫化物イオン',alt:'SO3'},{n:'リン酸イオン',f:'PO4',c:-3,p:1,trap:'リンイオン',alt:'PO3'}];
+const CAT=IONS.filter(i=>i.c>0&&i.f!=='H'),AN=IONS.filter(i=>i.c<0);
+const NOPAIR=['NH4-OH','Al-CO3'];const PAIRS=()=>CAT.flatMap(c=>AN.filter(a=>!NOPAIR.includes(c.f+'-'+a.f)).map(a=>[c,a]));
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function compound(ca,an){const a=ca.c,b=-an.c,L=a*b/gcd(a,b),nc=L/a,na=L/b;return{nc,na,str:part(ca,nc)+part(an,na),name:stem(an)+ca.n.replace('イオン','')}}
+function part(io,n){return n===1?io.f:(io.p?`(${io.f})${n}`:io.f+n)}
+const stem=an=>an.n.replace('物イオン','').replace('イオン','').replace(/^(塩|水酸)$/,'$1化');
+/* stem: 塩化物イオン→塩化 , 水酸化物イオン→水酸化 , 硝酸イオン→硝酸 */
+
+const SERIES=['Li','K','Ca','Na','Mg','Al','Zn','Fe','Ni','Sn','Pb','H2','Cu','Hg','Ag','Pt','Au'];
+const MNEMO=['リッチに','貸そう','か','な','ま','あ','あ','て','に','すん','な','ひ','ど','す','ぎる','借','金'];
+const METALS=SERIES.filter(m=>m!=='H2');
+const upto=m=>METALS.slice(0,METALS.indexOf(m)+1);
+const between=(a,b)=>METALS.slice(METALS.indexOf(a),METALS.indexOf(b)+1);
+const COND=[
+ {k:'w0',t:'常温の水と反応する金属',set:upto('Na')},
+ {k:'w1',t:'熱水とは反応するが、常温の水とは反応しない金属',set:['Mg']},
+ {k:'w2',t:'高温の水蒸気とは反応するが、熱水とは反応しない金属',set:between('Al','Fe')},
+ {k:'a0',t:'塩酸や希硫酸と反応して水素を発生する金属',set:upto('Pb')},
+ {k:'a1',t:'塩酸とは反応しないが、硝酸・熱濃硫酸とは反応する金属',set:['Cu','Hg','Ag']},
+ {k:'a2',t:'王水にしか溶けない金属',set:['Pt','Au']},
+ {k:'o0',t:'常温の空気中ですみやかに酸化される金属',set:upto('Na')},
+ {k:'o1',t:'加熱すると酸化されるが、常温ではすみやかには酸化されない金属',set:['Mg','Al']},
+ {k:'o2',t:'強熱しないと酸化されない金属',set:between('Zn','Hg')}];
+const ELNAME={Li:'リチウム',K:'カリウム',Ca:'カルシウム',Na:'ナトリウム',Mg:'マグネシウム',Al:'アルミニウム',Zn:'亜鉛',Fe:'鉄',Ni:'ニッケル',Sn:'スズ',Pb:'鉛',H2:'水素',Cu:'銅',Hg:'水銀',Ag:'銀',Pt:'白金',Au:'金'};
+
+const IONFORM=[[3,1],[11,1],[19,1],[12,2],[20,2],[13,3],[9,-1],[17,-1],[8,-2],[16,-2]];
+const nobleOf=e=>e<=2?'He':e<=10?'Ne':'Ar';
+
+const W=(a,d,why)=>[a,d,why];
+const PASSAGES=[
+ {id:'1a',sheet:1,title:'⑴ 原子の構造',text:'原子は，中心にある1個の［1］と，そのまわりに存在するいくつかの［2］からできている。［1］は，正の電荷をもつ［3］と，電荷をもたない［4］からできていて，［2］は負の電荷をもつ。原子では，陽子の数と［5］の数が等しく，正負の電荷の大きさがつり合っているため，原子全体として電気的に中性である。',
+  b:{1:W('原子核',['電子殻','陽子','分子'],'原子の中心にあるのは原子核。'),2:W('電子',['陽子','中性子','イオン'],'原子核のまわりにあるのが電子。'),3:W('陽子',['電子','中性子','原子核'],'正（＋）の電荷をもつのは陽子。'),4:W('中性子',['陽子','電子','価電子'],'電荷をもたないのは中性子。'),5:W('電子',['中性子','原子核','価電子'],'陽子（＋）と電子（−）の数が等しいので中性。')}},
+ {id:'1b',sheet:1,title:'⑴ 質量数と原子番号',text:'質量の比は，陽子：中性子：電子＝1：［1］：1/1840である。このため原子の質量は，陽子の質量と［2］の質量の和にほぼ等しい。原子のもつ陽子の数は元素の種類によって決まっており，この数を［3］という。陽子の数＋［4］の数＝質量数，［5］の数（＝電子の数）＝原子番号 である。',
+  b:{1:W('1',['2','1840','1/1840'],'陽子と中性子の質量はほぼ同じ（1：1）。電子は約1/1840とずっと軽い。'),2:W('中性子',['電子','原子核','価電子'],'電子はとても軽いので、原子の質量は陽子＋中性子でほぼ決まる。'),3:W('原子番号',['質量数','価電子の数','周期'],'陽子の数＝原子番号。'),4:W('中性子',['電子','陽子','原子核'],'質量数＝陽子の数＋中性子の数。元素記号の左上。'),5:W('陽子',['中性子','原子核','価電子'],'原子番号＝陽子の数＝電子の数。元素記号の左下。')}},
+ {id:'1c',sheet:1,title:'⑴ 同位体',text:'原子番号（＝陽子の数）が同じで，［1］が異なる原子を，互いに［2］であるという。互いに質量などの物理的な性質は異なるが，［3］性質はほぼ同じである。水素 ¹H の中性子は0個，重水素 ²H は［4］個，三重水素 ³H は［5］個である。',
+  b:{1:W('質量数',['原子番号','陽子の数','電子の数'],'陽子の数は同じで中性子の数がちがう → 質量数が異なる。「中性子の数」と書いても同じ意味。'),2:W('同位体',['同素体','同族元素','イオン'],'同じ元素で質量数がちがうもの＝同位体。'),3:W('化学的な',['物理的な','周期的な','電気的な'],'電子の数が同じなので化学的な性質はほぼ同じ。'),4:W('1',['0','2','3'],'²H：質量数2−陽子1＝中性子1。'),5:W('2',['1','3','0'],'³H：質量数3−陽子1＝中性子2。')}},
+ {id:'2a',sheet:2,title:'⑵ 電子配置',text:'原子内の電子は，原子核を取りまくいくつかの層に分かれて存在している。この層を［1］という。原子核に近いものから順に，K殻，［2］殻，［3］殻，N殻，……という。入ることのできる電子の最大数は，K殻2個，L殻［4］個，M殻［5］個，N殻［6］個である。各原子における，各電子殻に対する電子の配置のされ方を［7］という。最も外側の電子殻に存在する電子を［8］電子という。',
+  b:{1:W('電子殻',['原子核','電子配置','周期'],'電子が入る層＝電子殻。'),2:W('L',['K','M','N'],'K→L→M→N の順。'),3:W('M',['K','L','N'],'K→L→M→N の順。'),4:W('8',['2','18','32'],'2n²：n=2 で 8。'),5:W('18',['8','32','16'],'2n²：n=3 で 18。'),6:W('32',['18','8','64'],'2n²：n=4 で 32。'),7:W('電子配置',['電子殻','周期律','価電子'],'電子の入り方＝電子配置。'),8:W('最外殻',['内殻','価','自由'],'いちばん外側＝最外殻電子。')}},
+ {id:'2b',sheet:2,title:'⑵ Clの電子配置と価電子',text:'₁₇Clの電子配置は，K殻［1］個，L殻［2］個，M殻［3］個（計17個）である。原子が他の原子と結合するときに，特に重要な役割を果たす電子を［4］という。［4］の数が同じ原子どうしは，互いに［5］性質を示す。貴ガス（He，Ne，Ar）の価電子の数は［6］個とする。',
+  b:{1:W('2',['1','8','7'],'K殻は2個で満杯。'),2:W('8',['2','7','18'],'L殻は8個で満杯。'),3:W('7',['8','17','1'],'17−2−8＝7。'),4:W('価電子',['最外殻電子','陽子','中性子'],'結合に関わる電子＝価電子。'),5:W('似た',['逆の','無関係な','同じ質量の'],'価電子の数が同じ（同族）→ 性質が似る。'),6:W('0',['8','2','1'],'貴ガスは安定で結合しにくいので価電子0。最外殻電子は8（Heは2）。')}},
+ {id:'3a',sheet:3,title:'⑶ 周期律と周期表',text:'元素を［1］の順に並べたとき，性質の似た元素が周期的に現れることを元素の［2］という。ロシアの［3］らによって発見された。周期表の縦の列を［4］，横の行を［5］という。同じ族に属する元素を［6］元素といい，一般に価電子の数が同じで，互いに似た性質を示す。',
+  b:{1:W('原子番号',['質量数','発見された年','原子の大きさ'],'原子番号順に並べる。'),2:W('周期律',['周期表','同位体','イオン化傾向'],'性質が周期的にくり返す＝周期律。'),3:W('メンデレーエフ',['ドルトン','ラボアジエ','アボガドロ'],'1869年、ロシアのメンデレーエフ。'),4:W('族',['周期','群','系'],'縦＝族（1〜18族）。'),5:W('周期',['族','列','系'],'横＝周期（第1〜第7周期）。'),6:W('同族',['同位','典型','遷移'],'同じ族＝同族元素。')}},
+ {id:'3b',sheet:3,title:'⑶ 元素のグループ',text:'Hを除く1族の元素群を［1］，2族の元素群を［2］，F・Cl・Br・Iなどの17族の元素群を［3］，He・Ne・Arなどの18族の元素群を［4］という。典型元素は1，2および13〜18族の元素で，［5］元素は性質が似ている。遷移元素は第4周期以降の［6］族の元素で，すべて［7］元素である。第3周期で，13族の［8］は金属元素，14族の［9］は非金属元素である。',
+  b:{1:W('アルカリ金属',['アルカリ土類金属','ハロゲン','貴ガス'],'Hは1族だが非金属なので除く。'),2:W('アルカリ土類金属',['アルカリ金属','ハロゲン','遷移元素'],'2族＝アルカリ土類金属。'),3:W('ハロゲン',['貴ガス','アルカリ金属','遷移元素'],'17族＝ハロゲン。'),4:W('貴ガス',['ハロゲン','アルカリ土類金属','典型元素'],'18族＝貴ガス。'),5:W('同族',['同じ周期の','遷移','隣り合う'],'典型元素は縦（同族）が似る。遷移元素は横の隣どうしも似る。'),6:W('3〜12',['1〜2','13〜18','1〜18'],'遷移元素＝3〜12族。'),7:W('金属',['非金属','典型','貴ガス'],'遷移元素はすべて金属元素。'),8:W('Al',['Si','Mg','B'],'Al（アルミニウム）は金属。'),9:W('Si',['Al','P','C'],'Si（ケイ素）は非金属。')}},
+ {id:'4a',sheet:4,title:'⑷ イオン',text:'電荷をもつ粒子をイオンという。正の電荷をもつ［1］イオンと負の電荷をもつ［2］イオンがある。物質が陽イオンと陰イオンに分かれることを［3］という。塩化ナトリウムのように水溶液中で電離して電気を導く物質を［4］，スクロースのように電離しない物質を［5］という。原子が電子を失うと［6］の電荷を帯びた陽イオンに，電子を受け取ると［7］の電荷を帯びた陰イオンになる。',
+  b:{1:W('陽',['陰','中性','電解'],'正（＋）＝陽イオン。'),2:W('陰',['陽','中性','電解'],'負（−）＝陰イオン。'),3:W('電離',['融解','結合','中和'],'陽イオンと陰イオンに分かれる＝電離。'),4:W('電解質',['非電解質','イオン結晶','金属'],'電離して電気を導く＝電解質（例：NaCl）。'),5:W('非電解質',['電解質','イオン','絶縁体'],'電離しない＝非電解質（例：スクロース＝砂糖）。'),6:W('正',['負','中性','0'],'電子（−）を失う → ＋になる。'),7:W('負',['正','中性','0'],'電子（−）を受け取る → −になる。')}},
+ {id:'5a',sheet:5,title:'⑸ イオンへのなりやすさ',text:'電子を放出して陽イオンになりやすい性質を［1］，電子を受け取って陰イオンになりやすい性質を［2］という。原子から電子1個を取り去って1価の陽イオンにするために必要なエネルギーを［3］といい，これが小さい原子ほど陽イオンになり［4］。1個の原子からなるイオンを［5］イオン，2個以上の原子からなるイオンを［6］イオンという。元素が失ったり受け取ったりした電子の数をイオンの［7］という。',
+  b:{1:W('陽性',['陰性','酸性','中性'],'陽イオンになりやすい＝陽性（周期表の左下ほど大）。'),2:W('陰性',['陽性','塩基性','中性'],'陰イオンになりやすい＝陰性（右上ほど大、貴ガスを除く）。'),3:W('イオン化エネルギー',['電子親和力','イオン化傾向','静電気力'],'電子1個を取り去るエネルギー＝イオン化エネルギー。'),4:W('やすい',['にくい','おそい','大きい'],'少ないエネルギーで電子がとれる → 陽イオンになりやすい。'),5:W('単原子',['多原子','単体','一価'],'Na⁺ や Cl⁻ など。'),6:W('多原子',['単原子','化合物','複合'],'NH₄⁺ や SO₄²⁻ など。'),7:W('価数',['原子番号','質量数','族'],'失った・受け取った電子の数＝価数。')}},
+ {id:'5b',sheet:5,title:'⑹⑺ イオン結合と組成式',text:'陽イオンと陰イオンの間にはたらく［1］による結合をイオン結合という。物質を構成する元素の組成を最も簡単な整数比で表した化学式を［2］という。イオンからできる物質では正負の電荷がつり合っているので，陽イオンの価数×陽イオンの数＝［3］×陰イオンの数 が成り立つ。組成式は［4］イオンを前，［5］イオンを後に書き，名称は［6］イオン，［7］イオンの順に読む。多原子イオンの数が2以上のときは［8］でくくる。',
+  b:{1:W('静電気的な引力（クーロン力）',['分子間力','共有結合','磁力'],'＋と−が引き合う力。'),2:W('組成式',['分子式','構造式','電子式'],'最も簡単な整数比＝組成式。'),3:W('陰イオンの価数',['陰イオンの質量','陽イオンの価数','原子番号'],'正の電荷の総和＝負の電荷の総和。'),4:W('陽',['陰'],'書くときは陽イオンが先：NaCl。'),5:W('陰',['陽'],'陰イオンが後。'),6:W('陰',['陽'],'読むときは陰イオンが先：塩化ナトリウム。'),7:W('陽',['陰'],'陽イオンが後。'),8:W('（　）かっこ',['［　］','｛　｝','「　」'],'例：Al(OH)₃、Ca(NO₃)₂。')}},
+ {id:'6a',sheet:6,title:'⑻ 金属のイオン化傾向',text:'金属が水溶液中で電子を失い，陽イオンになろうとする性質を金属の［1］という。［1］が大きい金属ほど陽イオンになり［2］，小さい金属ほど陽イオンになり［3］。硝酸銀水溶液に銅線を入れると，銅は電子を失って銅(Ⅱ)イオンになって溶け出し，溶液中の［4］イオンは電子を受け取って銀になって析出する。これは銅のイオン化傾向が銀よりも［5］からである。',
+  b:{1:W('イオン化傾向',['イオン化エネルギー','陽性','電離'],'金属が陽イオンになろうとする性質＝イオン化傾向。'),2:W('やすい',['にくい'],'大きい → なりやすい。'),3:W('にくい',['やすい'],'小さい → なりにくい。'),4:W('銀',['銅(Ⅱ)','硝酸','水素'],'2Ag⁺＋Cu → 2Ag＋Cu²⁺。銀イオンが銀になる。'),5:W('大きい',['小さい'],'Cu＞Ag なので Cu が陽イオンになり、Ag⁺ が金属に戻る。')}},
+ {id:'6b',sheet:6,title:'⑼ イオン結晶',text:'陽イオンと陰イオンが規則正しく交互に配列した固体を［1］という。かたいが割れやすく，融点の［2］ものが多い。固体は電気を導かないが，融解液や［3］は電気を導く。イオン結合は，陽イオンになりやすい［4］元素と陰イオンになりやすい［5］元素の間に生じやすい。',
+  b:{1:W('イオン結晶',['分子結晶','金属','共有結合の結晶'],'例：塩化ナトリウムの結晶。'),2:W('高い',['低い'],'イオン結合は強いので融点が高い。'),3:W('水溶液',['固体','気体','結晶'],'イオンが動けるようになると電気を導く。'),4:W('金属',['非金属','貴ガス','典型'],'Na など金属元素 → 陽イオン。'),5:W('非金属',['金属','遷移','アルカリ金属'],'Cl など非金属元素 → 陰イオン。')}}
+];
+const P=Object.fromEntries(PASSAGES.map(p=>[p.id,p]));
+const SHEETS={1:'【化学①】原子の構造',2:'【化学②】原子の電子配置',3:'【化学③】周期律と周期表',4:'【化学④】イオン',5:'【化学⑤】なりやすさ・イオン結合・組成式',6:'【化学⑥】イオン化傾向・イオン結晶'};
+
+/* ---------- storage ---------- */
+const KEY='ion-lab-v1';
+let S={items:{},best:null};
+try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);if(o&&o.items)S=o}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function mark(k,ok){const it=S.items[k]||(S.items[k]={s:0,n:0,w:0});it.n++;if(ok)it.s++;else{it.s=0;it.w++}save()}
+const mastered=k=>(S.items[k]?.s||0)>=2;
+const weak=k=>(S.items[k]?.w||0)>0&&!mastered(k);
+function setKeys(m){
+  if(m==='fill')return PASSAGES.flatMap(p=>Object.keys(p.b).map(n=>`f:${p.id}-${n}`));
+  if(m==='ion')return IONS.flatMap((_,i)=>[`i:n${i}`,`i:f${i}`]);
+  if(m==='cmp')return PAIRS().map(([c,a])=>`k:${c.f}-${a.f}`);
+  if(m==='ser')return['r:all',...COND.map(c=>'r:'+c.k)];
+  if(m==='tbl')return[...IONFORM.map(([z])=>'x:'+z),...EL.map(e=>'g:'+e.z)];
+}
+const prog=m=>{const ks=setKeys(m);return[ks.filter(mastered).length,ks.length]};
+
+/* ---------- helpers ---------- */
+const app=document.getElementById('app');
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const prioritize=(arr,kf)=>{const s=shuffle(arr);return[...s.filter(x=>weak(kf(x))),...s.filter(x=>!weak(kf(x))&&!mastered(kf(x))),...s.filter(x=>mastered(kf(x)))]};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pick=(a,n)=>shuffle(a).slice(0,n);
+const uniq=a=>[...new Set(a)];
+
+const R=[56,82,108,134];
+function ePos(i,count,r){const out=[];if(i===0){[180,0].slice(0,count).forEach(a=>out.push(a));return out.map(a=>[a,r])}
+  const base=[180,0,270,90],off=(12/r)*180/Math.PI;for(let j=0;j<4;j++){const m=(j<count?1:0)+(j<count-4?1:0);if(m===1)out.push(base[j]);if(m===2)out.push(base[j]-off,base[j]+off)}return out.map(a=>[a,r])}
+function atomSVG(z,counts,opts={}){const n=counts.length,c=150,vb=(R[n-1]+16)*2,o=(300-vb)/2;
+  let s=`<svg class="atom" viewBox="${o} ${o} ${vb} ${vb}" role="img" aria-label="${opts.aria||'電子配置'}">`;
+  for(let i=0;i<n;i++)s+=`<circle class="ring" cx="${c}" cy="${c}" r="${R[i]}"/>`;
+  for(let i=0;i<n;i++)for(const[a,r] of ePos(i,counts[i],R[i])){const t=a*Math.PI/180;s+=`<circle class="el blue" cx="${(c+r*Math.cos(t)).toFixed(1)}" cy="${(c+r*Math.sin(t)).toFixed(1)}" r="6.2"/>`}
+  return s+`<circle class="nuc" cx="${c}" cy="${c}" r="31"/><text class="nuct" x="${c}" y="${c}">${z}+</text></svg>`}
+function iconIon(sign,col){return`<svg class="ic" viewBox="0 0 44 44"><circle cx="22" cy="22" r="15" fill="none" stroke="var(--ink)" stroke-width="1.3"/><circle cx="22" cy="22" r="7" fill="${col}"/><text x="22" y="23" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="var(--card)">${sign}</text></svg>`}
+
+/* ---------- views ---------- */
+let SES=null;
+function home(){
+  SES=null;
+  const m=(id,title,sub,mode,ic)=>{const[a,b]=prog(mode);return`<button class="mode" data-go="${id}">${ic}<span><b>${title}</b><small>${sub}</small><div class="bar"><i style="width:${(a/b*100).toFixed(0)}%"></i></div></span><span class="pc">${a}/${b}<br>習得</span></button>`};
+  app.innerHTML=`
+  <header class="hero">
+    <div><h1>イオンラボ</h1><p>化学①〜⑥ 問題集p52〜<br>原子の成り立ちとイオン</p></div>
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="38" cy="60" r="30" fill="none" stroke="var(--ink)" stroke-width="1.4"/><circle cx="38" cy="60" r="14" fill="var(--proton)"/>
+      <text x="38" y="61" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="var(--card)" font-family="IBM Plex Mono,monospace">11+</text>
+      <circle cx="88" cy="60" r="27" fill="none" stroke="var(--ink)" stroke-width="1.4"/><circle cx="88" cy="60" r="14" fill="var(--electron)"/>
+      <text x="88" y="61" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="var(--card)" font-family="IBM Plex Mono,monospace">17+</text>
+      <g class="spin" style="transform-origin:38px 60px"><circle cx="8" cy="60" r="4.5" fill="var(--electron)"/></g>
+      <path d="M58 30 q12 -12 24 0" fill="none" stroke="var(--muted)" stroke-width="1.4" marker-end="url(#ar)"/>
+      <defs><marker id="ar" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L6 3L0 6z" fill="var(--muted)"/></marker></defs>
+    </svg>
+  </header>
+  <div class="sec-label">まず読む</div>
+  <div class="modes"><button class="mode read" data-go="sum">${iconIon('+','var(--proton)').replace('var(--ink)','var(--paper)')}<span><b>まとめノート</b><small>プリント①〜⑥の要点・イオン表・イオン化列の反応</small></span><span class="pc"></span></button></div>
+  <div class="sec-label">練習する（2回連続正解で「習得」）</div>
+  <div class="modes">
+    ${m('fill','用語の穴埋め','プリント①〜⑥の（　）を全部','fill',iconIon('?','var(--muted)'))}
+    ${m('ion','イオンの名前⇔化学式','表の12個を両方向から','ion',iconIon('±','var(--electron)'))}
+    ${m('cmp','組成式と名前をつくる','Ca²⁺とCl⁻ → CaCl₂・塩化カルシウム','cmp',iconIon('+','var(--proton)'))}
+    ${m('ser','イオン化列','リッチに貸そうかな…の順番と反応','ser',iconIon('>','var(--ink)'))}
+    ${m('tbl','周期表と電子配置→イオン','族・周期・元素群、Na→Na⁺ など','tbl',iconIon('e','var(--electron)'))}
+  </div>
+  <div class="sec-label">仕上げ</div>
+  <div class="modes"><button class="mode" data-go="test">${iconIon('★','var(--proton)')}<span><b>総合テスト 15問</b><small>全部の形式をまぜて。やり直しなし</small></span><span class="pc">${S.best==null?'—':S.best+'/15'}</span></button></div>
+  <div class="foot"><span>記録はこの端末のブラウザに保存されます</span><button class="linkbtn" id="reset">記録をリセット</button></div>
+  <div id="confirmArea"></div>`;
+  app.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+  document.getElementById('reset').onclick=()=>{
+    document.getElementById('confirmArea').innerHTML=`<div class="confirm">習得状況とテストのベストをすべて消します。<div class="row"><button class="btn" id="cn">やめる</button><button class="btn pri" id="cy">消す</button></div></div>`;
+    document.getElementById('cn').onclick=()=>document.getElementById('confirmArea').innerHTML='';
+    document.getElementById('cy').onclick=()=>{S={items:{},best:null};save();home()};
+  };
+  window.scrollTo(0,0);
+}
+function topbar(t,r=''){return`<div class="top"><button class="back" id="bk" aria-label="ホームへ戻る">←</button><h2>${t}</h2>${r}</div>`}
+function go(id){
+  if(id==='sum')return summary();
+  if(id==='test')return startTest();
+  const sheetItem=n=>{const ps=PASSAGES.filter(p=>p.sheet===n);const ks=ps.flatMap(p=>Object.keys(p.b).map(b=>`f:${p.id}-${b}`));return{b:SHEETS[n],s:`${ks.length}か所　${ks.filter(mastered).length}/${ks.length} 習得`,f:()=>startFill(ps.map(p=>p.id))}};
+  const allIon=()=>IONS.flatMap((_,i)=>[qIonName(i),qIonFormula(i)]);
+  const allCmp=PAIRS();
+  const cfg={
+    fill:{t:'用語の穴埋め',items:[...[1,2,3,4,5,6].map(sheetItem),{b:'①〜⑥ 全部つづけて',s:PASSAGES.reduce((n,p)=>n+Object.keys(p.b).length,0)+'か所',f:()=>startFill(PASSAGES.map(p=>p.id))}]},
+    ion:{t:'イオンの名前⇔化学式',items:[{b:'名前 → 化学式（12問）',s:'硫酸イオン → SO₄²⁻',f:()=>startSet('名前→化学式',prioritize(IONS.map((_,i)=>i),i=>'i:n'+i).map(qIonName))},{b:'化学式 → 名前（12問）',s:'OH⁻ → 水酸化物イオン',f:()=>startSet('化学式→名前',prioritize(IONS.map((_,i)=>i),i=>'i:f'+i).map(qIonFormula))},{b:'両方まぜて（24問）',s:'苦手から先に出ます',f:()=>startSet('イオンの名前⇔化学式',prioritize(allIon(),q=>q.key))}]},
+    cmp:{t:'組成式と名前',items:[{b:'ランダム8問',s:'陽イオン5種×陰イオン6種の28通りから（苦手優先）',f:()=>startSet('組成式と名前',prioritize(allCmp,([c,a])=>`k:${c.f}-${a.f}`).slice(0,8).map(([c,a])=>qCompound(c,a)))},{b:'多原子イオンだけ8問',s:'(OH)₂ や (NH₄)₂SO₄ などかっこが要るもの',f:()=>startSet('組成式と名前',shuffle(allCmp.filter(([c,a])=>{const k=compound(c,a);return(c.p&&k.nc>1)||(a.p&&k.na>1)})).slice(0,8).map(([c,a])=>qCompound(c,a)))}]},
+    ser:{t:'イオン化列',items:[{b:'イオン化列を並べる',s:'Li〜Au の17個を大きい順にタップ',f:()=>startSet('イオン化列',[qOrder()])},{b:'反応のちがい（9問）',s:'水・酸・空気との反応',f:()=>startSet('イオン化列',prioritize(COND,c=>'r:'+c.k).map(qCond))},{b:'どっちが大きい？（10問）',s:'2つの金属のイオン化傾向をくらべる',f:()=>startSet('イオン化列',Array.from({length:10},qVs))}]},
+    tbl:{t:'周期表と電子配置→イオン',items:[{b:'原子 → イオン（10問）',s:'電子配置の図から、なるイオンと同じ配置の貴ガス',f:()=>startSet('原子→イオン',prioritize(IONFORM,([z])=>'x:'+z).map(qIonForm))},{b:'族・周期・元素群（10問）',s:'1〜20番から',f:()=>startSet('族・周期・元素群',prioritize(EL.map(e=>e.z),z=>'g:'+z).slice(0,10).map(qGroup))}]}
+  }[id];
+  app.innerHTML=topbar(cfg.t)+`<div class="pick">${cfg.items.map((it,i)=>`<button data-i="${i}"><b>${it.b}</b><small>${it.s}</small></button>`).join('')}</div>`;
+  document.getElementById('bk').onclick=home;
+  app.querySelectorAll('.pick button').forEach(b=>b.onclick=()=>cfg.items[+b.dataset.i].f());
+  window.scrollTo(0,0);
+}
+
+/* ---------- session engine ---------- */
+function startSet(title,qs,opt={}){SES={title,qs,i:0,retry:[],round:1,first:0,total:qs.length,streak:0,max:0,test:!!opt.test,missed:[],known:{},miss:{}};showQ()}
+function startFill(ids){const qs=[];ids.forEach(id=>Object.keys(P[id].b).forEach(n=>qs.push(qFill(id,+n))));startSet('用語の穴埋め',qs)}
+function startTest(){
+  const blanks=pick(PASSAGES.flatMap(p=>Object.keys(p.b).map(n=>[p.id,+n])),4);
+  const cmp=pick(PAIRS(),2);
+  const qs=shuffle([...blanks.map(([id,n])=>qFill(id,n,true)),...pick(IONS.map((_,i)=>i),2).map(qIonName),...pick(IONS.map((_,i)=>i),1).map(qIonFormula),...cmp.map(([c,a])=>qCompound(c,a)),...pick(COND,2).map(qCond),qVs(),...pick(IONFORM,2).map(qIonForm),qGroup(pick(EL.map(e=>e.z),1)[0])]);
+  startSet('総合テスト',qs,{test:true});
+}
+function showQ(){
+  if(SES.i>=SES.qs.length){
+    if(!SES.test&&SES.retry.length){SES.qs=shuffle(SES.retry);SES.retry=[];SES.i=0;SES.round++;
+      app.innerHTML=topbar(SES.title)+`<div class="qcard result"><div class="qtag">ROUND ${SES.round}</div><h2 style="margin:8px 0">まちがえた ${SES.qs.length} 問をもう一度</h2><p class="hint">全部正解するまで続きます</p><button class="check" id="gn">はじめる</button></div>`;
+      document.getElementById('bk').onclick=home;document.getElementById('gn').onclick=showQ;return}
+    return endSes();
+  }
+  const q=SES.qs[SES.i];
+  const pos=SES.round===1?`${SES.i+1}/${SES.qs.length}`:`再 ${SES.i+1}/${SES.qs.length}`;
+  app.innerHTML=topbar(SES.title,`<span class="chip">${pos}</span><span class="chip${SES.streak>=3?' hot':''}" id="stk">連続 ${SES.streak}</span>`)+`<div class="qcard"><div class="qtag">${q.label}</div><div id="qb"></div></div><div id="fbx"></div>`;
+  document.getElementById('bk').onclick=home;
+  q.render(document.getElementById('qb'),(ok,exp,extra)=>answered(q,ok,exp,extra));
+  window.scrollTo(0,0);
+}
+function answered(q,ok,exp,extra=''){
+  mark(q.key,ok);
+  if(ok){SES.streak++;SES.max=Math.max(SES.max,SES.streak);if(SES.round===1)SES.first++}
+  else{SES.streak=0;SES.retry.push(q);if(SES.test)SES.missed.push(q)}
+  const st=document.getElementById('stk');st.textContent='連続 '+SES.streak;st.classList.toggle('hot',SES.streak>=3);if(ok){st.classList.remove('pop');void st.offsetWidth;st.classList.add('pop')}
+  const last=SES.i===SES.qs.length-1,fb=document.getElementById('fbx');
+  fb.innerHTML=`<div class="fb${ok?'':' ng'}"><div class="v">${ok?'正解':'ちがいます'}</div><p>${exp}</p>${extra}<button class="check next" id="nx">${last?'結果へ':'次の問題'}</button></div>`;
+  document.getElementById('nx').onclick=()=>{SES.i++;showQ()};
+  fb.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});
+}
+function endSes(){
+  const s=SES;let body;
+  if(s.test){
+    const sc=s.total-s.missed.length;if(S.best==null||sc>S.best){S.best=sc;save()}
+    body=`${sc===s.total?'<div class="stamp">満点<br>合格</div><br>':''}<div class="qtag">総合テスト</div><div class="big">${sc}<span style="font-size:1.4rem">/${s.total}</span></div><div class="hint">ベスト ${S.best}/${s.total}</div>
+    ${s.missed.length?`<div class="missed box"><b>まちがえた問題</b><ul>${s.missed.map(q=>`<li>${q.summary}</li>`).join('')}</ul></div>`:''}`;
+  }else body=`${s.first===s.total?'<div class="stamp">全問<br>正解</div><br>':''}<div class="qtag">${s.title}</div><div class="big">${s.first}<span style="font-size:1.4rem">/${s.total}</span></div><div class="hint">1回目で正解した数　・　最高連続 ${s.max}</div>`;
+  app.innerHTML=topbar(s.title)+`<div class="qcard result">${body}<div class="row"><button class="btn" id="hm">ホームへ</button>${s.test?'<button class="btn pri" id="ag">もう一度</button>':''}</div></div>`;
+  document.getElementById('bk').onclick=home;document.getElementById('hm').onclick=home;
+  if(s.test)document.getElementById('ag').onclick=startTest;
+  window.scrollTo(0,0);
+}
+
+/* ---------- generic choice ---------- */
+function choiceStep(box,prompt,ans,dis,cls,cb){
+  const opts=shuffle([ans,...dis]);
+  box.innerHTML=`${prompt?`<p class="prompt">${prompt}</p>`:''}<div class="choices ${cls||''}">${opts.map((c,i)=>`<button class="choice" data-i="${i}">${c}</button>`).join('')}</div>`;
+  box.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{
+    const ok=opts[+b.dataset.i]===ans;
+    box.querySelectorAll('.choice').forEach(x=>{x.disabled=true;if(opts[+x.dataset.i]===ans)x.classList.add('ok')});
+    if(!ok)b.classList.add('ng');cb(ok);
+  });
+}
+function steps(el,list,done,exp,extra){
+  el.innerHTML=list.map((_,i)=>`<div class="step" id="st${i}"${i?' hidden':''}></div>`).join('');
+  let all=true;
+  const run=i=>{const s=list[i],box=el.querySelector('#st'+i);box.hidden=false;
+    choiceStep(box,s.prompt,s.ans,s.dis,s.cls,ok=>{all=all&&ok;if(i+1<list.length)run(i+1);else done(all,typeof exp==='function'?exp(all):exp,extra)})};
+  run(0);
+}
+
+/* ---------- question types ---------- */
+function passageHTML(p,cur,known,ms){return p.text.replace(/［(\d)］/g,(_,d)=>{const n=+d;
+  if(n===cur)return`<span class="blank cur">（ ${CIRC[n-1]} ）</span>`;
+  if(known.has(n))return`<span class="filled${ms&&ms.has(n)?' miss':''}">${esc(p.b[n][0])}</span>`;
+  return`<span class="blank">（ ${CIRC[n-1]} ）</span>`})}
+function qFill(pid,num,ctxAll){
+  const p=P[pid],[ans,dis,why]=p.b[num];
+  return{key:`f:${pid}-${num}`,label:`穴埋め　${p.title}`,summary:`${p.title} ${CIRC[num-1]} → ${ans}`,
+  render(el,done){
+    const known=ctxAll?new Set(Object.keys(p.b).map(Number)):(SES.known[pid]||(SES.known[pid]=new Set()));
+    const ms=SES.miss[pid]||(SES.miss[pid]=new Set());known.delete(num);
+    el.innerHTML=`<p class="prompt">${CIRC[num-1]}にあてはまることばは？</p><div class="passage" id="pg">${passageHTML(p,num,known,ms)}</div><div id="ch"></div>`;
+    choiceStep(el.querySelector('#ch'),'',esc(ans),dis.map(esc),dis.length<3?'c1':'',ok=>{
+      if(!ok)ms.add(num);else ms.delete(num);known.add(num);
+      el.querySelector('#pg').innerHTML=passageHTML(p,0,known,ms);
+      done(ok,`${CIRC[num-1]}＝<b>${esc(ans)}</b>。${why}`);
+    });
+  }};
+}
+function ionWrong(io){
+  const out=[],s=Math.sign(io.c),m=Math.abs(io.c);
+  out.push(ionF(io.f,-io.c));
+  [1,2,3].filter(x=>x!==m).forEach(x=>out.push(ionF(io.f,s*x)));
+  if(io.alt)out.unshift(ionF(io.alt,io.c));
+  return pick(uniq(out),3);
+}
+function qIonName(i){const io=IONS[i];
+  return{key:'i:n'+i,label:'名前 → 化学式',summary:`${io.n} → ${ionF(io.f,io.c)}`,
+  render(el,done){choiceStep(el,`<span style="font-size:1.25rem">${io.n}</span> の化学式は？`,ionF(io.f,io.c),ionWrong(io),'',ok=>done(ok,`${io.n}は <b>${ionF(io.f,io.c)}</b>。${io.c>0?`電子を${Math.abs(io.c)}個失った（または${Math.abs(io.c)}価の）陽イオン`:`${Math.abs(io.c)}価の陰イオン`}。${io.p?'2個以上の原子からなる多原子イオン。':''}`))}};
+}
+function qIonFormula(i){const io=IONS[i];
+  const others=IONS.filter(x=>x!==io).map(x=>x.n);
+  const dis=io.trap?[io.trap,...pick(others,2)]:pick(others,3);
+  return{key:'i:f'+i,label:'化学式 → 名前',summary:`${ionF(io.f,io.c)} → ${io.n}`,
+  render(el,done){el.innerHTML=`<div class="bigf">${ionF(io.f,io.c)}</div><div id="ch"></div>`;
+    choiceStep(el.querySelector('#ch'),'このイオンの名前は？',io.n,dis,'',ok=>done(ok,`${ionF(io.f,io.c)} は <b>${io.n}</b>。`+(io.trap?`「${io.trap}」とまちがえやすいので注意。`:'')))}};
+}
+function qCompound(ca,an){
+  const k=compound(ca,an),right=`<span class="f">${fmt(k.str)}</span>`;
+  const cand=[part(ca,k.na)+part(an,k.nc),ca.f+an.f,(k.nc>1?ca.f+k.nc:ca.f)+(k.na>1?an.f+k.na:an.f),part(an,k.na)+part(ca,k.nc),part(ca,k.nc+1)+part(an,k.na),part(ca,k.nc)+part(an,k.na+1)].filter(x=>x!==k.str);
+  const fdis=pick(uniq(cand),3).map(x=>`<span class="f">${fmt(x)}</span>`);
+  const cs=ca.n.replace('イオン',''),as=stem(an);
+  const ndis=pick(uniq([cs+as,an.n.replace('イオン','')+cs,stem(pick(AN.filter(x=>x!==an),1)[0])+cs,as+pick(CAT.filter(x=>x!==ca),1)[0].n.replace('イオン','')]).filter(x=>x!==k.name),3);
+  return{key:`k:${ca.f}-${an.f}`,label:'組成式と名前',summary:`${ionF(ca.f,ca.c)} と ${ionF(an.f,an.c)} → ${right}・${k.name}`,
+  render(el,done){
+    el.innerHTML=`<p class="prompt">この2つのイオンからできる物質は？</p><div class="pair">${ionF(ca.f,ca.c)}<span class="and">と</span>${ionF(an.f,an.c)}</div><div id="sx"></div>`;
+    steps(el.querySelector('#sx'),[{prompt:'① 組成式',ans:right,dis:fdis},{prompt:'② 名称',ans:k.name,dis:ndis,cls:''}],done,
+      `電荷をつり合わせる：${ca.c}価×<b>${k.nc}</b>個 ＝ ${-an.c}価×<b>${k.na}</b>個。陽イオンを前に書いて <b>${right}</b>${(ca.p&&k.nc>1)||(an.p&&k.na>1)?'（多原子イオンが2個以上なので（　）でくくる）':''}。名前は陰イオン→陽イオンの順で <b>${k.name}</b>。`);
+  }};
+}
+function qOrder(){
+  return{key:'r:all',label:'イオン化列を並べる',summary:'イオン化列 Li＞K＞Ca＞Na＞Mg＞Al＞Zn＞Fe＞Ni＞Sn＞Pb＞(H₂)＞Cu＞Hg＞Ag＞Pt＞Au',
+  render(el,done){
+    let idx=0,err=0;const pool=shuffle(SERIES);
+    el.innerHTML=`<p class="prompt">イオン化傾向の<b>大きい順</b>にタップしよう</p><div class="lane" id="ln"><span class="gt">ここに並びます</span></div><div class="chips" id="cp">${pool.map(m=>`<button class="chipb" data-m="${m}">${m==='H2'?'H<sub>2</sub>':m}</button>`).join('')}</div><p class="hint" id="er">まちがい 0</p>`;
+    const ln=el.querySelector('#ln');
+    el.querySelectorAll('#cp .chipb').forEach(b=>b.onclick=()=>{
+      if(b.dataset.m===SERIES[idx]){if(idx===0)ln.innerHTML='';b.onclick=null;b.classList.remove('bad');ln.appendChild(b);idx++;
+        if(idx===SERIES.length)done(err===0,err===0?'ノーミスで並べられました。':`まちがい ${err} 回。ノーミスで並べられるまでくり返そう。`,`<div class="wide"><div class="inner">${seriesHTML()}</div></div>`);}
+      else{err++;b.classList.remove('bad');void b.offsetWidth;b.classList.add('bad');el.querySelector('#er').textContent=`まちがい ${err}　次は ${MNEMO[idx]} …`}
+    });
+  }};
+}
+function seriesHTML(){return`<div class="series">${SERIES.map((m,i)=>`<div>${m==='H2'?'(H<sub>2</sub>)':m}<small>${MNEMO[i]}</small></div>`).join('')}</div>`}
+function qCond(c){
+  const pool=METALS.filter(m=>!c.set.includes(m)&&!(c.ex||[]).includes(m)&&m!=='Pb');
+  const ans=pick(c.set.filter(m=>m!=='Pb'),1)[0];
+  const lab=m=>`<span class="f">${m}</span><small style="display:block;font-size:.7rem;color:var(--muted);font-weight:500">${ELNAME[m]}</small>`;
+  return{key:'r:'+c.k,label:'イオン化列と反応',summary:`${c.t} → ${c.set.join('・')}`,
+  render(el,done){choiceStep(el,`次のうち、<b>${c.t}</b>はどれ？`,lab(ans),pick(pool,3).map(lab),'',ok=>done(ok,`${c.t}は <b>${c.set.join('・')}</b>。イオン化傾向が大きい（左にある）金属ほど反応しやすい。`,`<div class="wide" style="margin-top:8px"><div class="inner">${seriesHTML()}</div></div>`))}};
+}
+function qVs(){
+  const [a,b]=pick(METALS,2),big=METALS.indexOf(a)<METALS.indexOf(b)?a:b;
+  const lab=m=>`<span class="f">${m}</span><small style="display:block;font-size:.7rem;color:var(--muted);font-weight:500">${ELNAME[m]}</small>`;
+  return{key:'r:vs',label:'どっちが大きい？',summary:`${a} と ${b} → ${big} の方が大きい`,
+  render(el,done){
+    const opts=[a,b];el.innerHTML=`<p class="prompt">イオン化傾向が大きいのはどっち？</p><div class="choices">${opts.map(m=>`<button class="choice" data-m="${m}">${lab(m)}</button>`).join('')}</div>`;
+    el.querySelectorAll('.choice').forEach(x=>x.onclick=()=>{const ok=x.dataset.m===big;el.querySelectorAll('.choice').forEach(y=>{y.disabled=true;if(y.dataset.m===big)y.classList.add('ok')});if(!ok)x.classList.add('ng');
+      done(ok,`イオン化列で <b>${big}</b> の方が左（${big===a?b:a}より大きい）。`,`<div class="wide" style="margin-top:8px"><div class="inner">${seriesHTML()}</div></div>`)});
+  }};
+}
+function qIonForm([z,c]){
+  const e=EL[z-1],sh=shells(z),right=ionF(e.s,c),nob=nobleOf(z-c);
+  const dis=pick([1,2,3,-1,-2,-3].filter(x=>x!==c),3).map(x=>ionF(e.s,x));
+  return{key:'x:'+z,label:'原子 → イオン',summary:`${e.n} ${e.s}（${cfgText(z)}）→ ${right}、${nob}と同じ配置`,
+  render(el,done){
+    el.innerHTML=`<p class="prompt">${e.n} ${e.s} がイオンになると？</p><div style="max-width:200px;margin:0 auto">${atomSVG(z,sh,{aria:e.n+'の電子配置'})}</div><p class="hint">${cfgText(z)}</p><div id="sx"></div>`;
+    steps(el.querySelector('#sx'),[{prompt:'① できるイオン',ans:right,dis},{prompt:'② 同じ電子配置になる貴ガス',ans:nob,dis:['He','Ne','Ar'].filter(x=>x!==nob),cls:'c3'}],done,
+      (c>0?`最外殻の電子${c}個を<b>失って</b> ${right}（陽イオン）。`:`電子を${-c}個<b>受け取って</b> ${right}（陰イオン）。最外殻が8個になる。`)+`電子は ${z-c} 個になり、<b>${nob}</b>と同じ電子配置。`);
+  }};
+}
+function qGroup(z){
+  const e=EL[z-1],g=group(z),p=period(z),fam=family(z);
+  return{key:'g:'+z,label:'族・周期・元素群',summary:`${e.s}（${e.n}）→ 第${p}周期・${g}族・${fam}`,
+  render(el,done){
+    el.innerHTML=`<p class="prompt">${e.n} <span class="f">${e.s}</span>（原子番号${z}）について</p><div id="sx"></div>`;
+    const pd=[1,2,3,4].filter(x=>x!==p).map(x=>`第${x}周期`);
+    const gd=pick([1,2,13,14,15,16,17,18].filter(x=>x!==g),3).map(x=>`${x}族`);
+    steps(el.querySelector('#sx'),[{prompt:'① 周期は？',ans:`第${p}周期`,dis:pick(pd,3)},{prompt:'② 族は？',ans:`${g}族`,dis:gd},{prompt:'③ 元素群は？',ans:fam,dis:pick(['アルカリ金属','アルカリ土類金属','ハロゲン','貴ガス','どれでもない'].filter(x=>x!==fam),3)}],done,
+      `電子殻の数＝周期 → ${cfgText(z)} で<b>第${p}周期</b>。${NOBLE.includes(z)?'貴ガスは18族':`価電子${valence(z)}個`} → <b>${g}族</b>。${z===1?'Hは1族だが非金属なので<b>アルカリ金属ではない</b>。':`元素群は<b>${fam}</b>。`}`);
+  }};
+}
+
+/* ---------- summary ---------- */
+function summary(){
+  const tr=(c)=>IONS.filter(i=>i.c===c);
+  const ionRows=[1,2,3].map(m=>`<tr><td class="mono">+${m}</td><td class="nm">${tr(m).map(i=>`${i.n} ${ionF(i.f,i.c)}`).join('<br>')}</td><td class="mono">−${m}</td><td class="nm">${tr(-m).map(i=>`${i.n} ${ionF(i.f,i.c)}`).join('<br>')}</td></tr>`).join('');
+  const pts=EL.map(e=>[e.z,valence(e.z)]),X=z=>20+(z-1)*14,Y=v=>130-v*15;
+  const graph=`<svg viewBox="0 0 310 160" style="width:100%;height:auto" role="img" aria-label="価電子の数と原子番号のグラフ"><g stroke="var(--line)">${[0,1,2,3,4,5,6,7].map(v=>`<line x1="16" x2="300" y1="${Y(v)}" y2="${Y(v)}"/>`).join('')}</g><polyline fill="none" stroke="var(--electron)" stroke-width="2" points="${pts.map(([z,v])=>`${X(z)},${Y(v)}`).join(' ')}"/>${pts.map(([z,v])=>`<circle cx="${X(z)}" cy="${Y(v)}" r="3" fill="var(--electron)"/>`).join('')}${[[2,'He'],[10,'Ne'],[18,'Ar']].map(([z,s])=>`<text x="${X(z)}" y="${Y(0)+14}" font-size="10" text-anchor="middle" fill="var(--ink)" font-weight="700">${s}</text>`).join('')}${[[9,'F'],[17,'Cl']].map(([z,s])=>`<text x="${X(z)}" y="${Y(7)-6}" font-size="10" text-anchor="middle" fill="var(--ink)" font-weight="700">${s}</text>`).join('')}<text x="4" y="${Y(7)+4}" font-size="9" fill="var(--muted)">7</text><text x="4" y="${Y(0)+4}" font-size="9" fill="var(--muted)">0</text><text x="300" y="156" font-size="9" text-anchor="end" fill="var(--muted)">原子番号 →</text></svg>`;
+  const ptab=`<div class="ptab"><div class="h"></div>${[1,2,13,14,15,16,17].map(g=>`<div class="h">${g}</div>`).join('')}${[1,2,3,4].map(p=>`<div class="h">${p}</div>`+[1,2,13,14,15,16,17,18].slice(0,7).map(g=>{const e=EL.find(x=>period(x.z)===p&&group(x.z)===g);if(!e)return'<div style="background:none"></div>';const f=family(e.z);return`<div class="${f==='アルカリ金属'?'alk':f==='アルカリ土類金属'?'ear':f==='ハロゲン'?'hal':''}">${e.s}</div>`}).join('')).join('')}</div>`;
+  app.innerHTML=topbar('まとめノート')+`<div class="sum">
+  <h3>1 原子の構造 <span>化学①</span></h3>
+  <div class="box">
+    <p><b>原子核</b>＝<span class="p">陽子（＋）</span>＋<span class="n">中性子（電荷なし）</span>、まわりに<span class="e">電子（−）</span>。陽子の数＝電子の数で中性。</p>
+    <p>質量比 陽子：中性子：電子＝<b>1：1：1/1840</b> → 原子の質量≒陽子＋中性子。</p>
+    <div class="fx"><div><span class="p">陽子</span>＋<span class="n">中性子</span>＝質量数<em>左上 ¹²C の12</em></div><div><span class="p">陽子の数</span>（＝電子の数）＝原子番号<em>左下 ₆C の6</em></div></div>
+    <p><b>同位体</b>：原子番号が同じで質量数（中性子の数）が異なる原子。化学的性質はほぼ同じ。</p>
+    <div class="tblwrap"><table><thead><tr><th></th><th>¹H 水素</th><th>²H 重水素</th><th>³H 三重水素</th></tr></thead><tbody><tr><td>陽子</td><td>1</td><td>1</td><td>1</td></tr><tr><td>中性子</td><td>0</td><td>1</td><td>2</td></tr><tr><td>質量数</td><td>1</td><td>2</td><td>3</td></tr><tr><td>電子</td><td>1</td><td>1</td><td>1</td></tr></tbody></table></div>
+  </div>
+  <h3>2 電子配置と価電子 <span>化学②</span></h3>
+  <div class="box">
+    <div class="cap"><div><b>2</b><small>K殻</small></div><div><b>8</b><small>L殻</small></div><div><b>18</b><small>M殻</small></div><div><b>32</b><small>N殻</small></div></div>
+    <p>最も外側の殻の電子＝<b>最外殻電子</b>。結合に関わる電子＝<b>価電子</b>。貴ガスは価電子<b>0</b>（最外殻電子は8、Heは2）。</p>
+    <div class="viewer"><div>${atomSVG(17,shells(17),{aria:'塩素の電子配置'})}</div><div class="vinfo"><b>₁₇Cl</b><div>K殻2・L殻8・M殻7<br>価電子 <b class="e">7</b></div></div></div>
+  </div>
+  <h3>3 周期律と周期表 <span>化学③</span></h3>
+  <div class="box">
+    <p>原子番号順に並べると性質が周期的にくり返す＝<b>周期律</b>（ロシアの<b>メンデレーエフ</b>）。縦の列＝<b>族</b>、横の行＝<b>周期</b>。</p>
+    ${graph}
+    ${ptab}
+    <div class="legend"><span><i style="background:color-mix(in srgb,var(--proton) 28%,var(--card))"></i>アルカリ金属（Hを除く1族）</span><span><i style="background:color-mix(in srgb,var(--proton) 13%,var(--card))"></i>アルカリ土類金属（2族）</span><span><i style="background:color-mix(in srgb,var(--electron) 25%,var(--card))"></i>ハロゲン（17族）</span><span>18族：貴ガス He Ne Ar</span></div>
+    <p><b>典型元素</b>：1・2・13〜18族。同族元素の性質が似る。金属と非金属の両方。<br><b>遷移元素</b>：第4周期以降の3〜12族。すべて<b>金属</b>。隣どうしも似る。<br>第3周期：<b>Al</b>は金属、<b>Si</b>は非金属。</p>
+  </div>
+  <h3>4 イオン <span>化学④</span></h3>
+  <div class="box">
+    <p>電子を失う → <b>陽イオン</b>（正）、受け取る → <b>陰イオン</b>（負）。電離する物質＝<b>電解質</b>（NaCl）、しない＝<b>非電解質</b>（スクロース）。</p>
+    <p>Na → Na⁺ はネオン、Cl → Cl⁻ はアルゴンと同じ電子配置になる。</p>
+    <div class="tblwrap"><table><thead><tr><th>電荷</th><th>陽イオン</th><th>電荷</th><th>陰イオン</th></tr></thead><tbody>${ionRows}</tbody></table></div>
+  </div>
+  <h3>5 なりやすさ・イオン結合・組成式 <span>化学⑤</span></h3>
+  <div class="box">
+    <p><b>陽性</b>＝陽イオンになりやすい（周期表の左下）。<b>陰性</b>＝陰イオンになりやすい（右上、貴ガス除く）。<b>イオン化エネルギー</b>が小さいほど陽イオンになりやすい。</p>
+    <p>単原子イオン（Na⁺）／多原子イオン（SO₄²⁻）。失った・受け取った電子の数＝<b>価数</b>。<b>イオン結合</b>＝陽イオンと陰イオンの静電気的な引力（クーロン力）による結合。</p>
+    <div class="fx"><div>陽イオンの価数×陽イオンの数 ＝ 陰イオンの価数×陰イオンの数</div></div>
+    <p>① 陽イオンを前、陰イオンを後 ② 電荷をつり合わせる ③ 数を右下に（電荷は書かない） ④ 1は省略、多原子イオンが2個以上なら（　）<br>例：Ca²⁺とCl⁻ → <span class="f">CaCl<sub>2</sub></span>、Al³⁺とOH⁻ → <span class="f">Al(OH)<sub>3</sub></span><br>名前は<b>陰イオン→陽イオン</b>の順：塩化カルシウム</p>
+  </div>
+  <h3>6 イオン化傾向・イオン結晶 <span>化学⑥</span></h3>
+  <div class="box">
+    <p>イオン化傾向が大きい金属ほど陽イオンになりやすく、反応しやすい。Cu を AgNO₃ 水溶液に入れると 2Ag⁺＋Cu → 2Ag＋Cu²⁺（Cu＞Ag）。</p>
+    <div class="wide"><div class="inner">${seriesHTML()}
+      ${COND.map(c=>`<div class="rxl">${c.t.replace('金属','')}</div><div class="rx"><span style="grid-column:${SERIES.indexOf(c.set[0])+1}/${SERIES.indexOf(c.set.at(-1))+2}">${c.set.join(' ')}</span></div>`).join('')}
+    </div></div>
+    <p style="font-size:.8rem;color:var(--muted)">プリントの図より。Pbは塩酸・希硫酸の範囲に入るが、表面に溶けにくい塩ができて反応がすぐ止まる。</p>
+    <p><b>イオン結晶</b>：かたいが割れやすい・融点が<b>高い</b>・固体は電気を通さず、融解液や<b>水溶液</b>は通す・水に溶けるものが多い。金属元素＋非金属元素でできやすい。</p>
+  </div>
+  <div style="margin-top:20px"><button class="check" id="tp">練習をはじめる</button></div>
+  </div>`;
+  document.getElementById('bk').onclick=home;document.getElementById('tp').onclick=home;
+  window.scrollTo(0,0);
+}
+
+home();
+</script>
+</body></html>
